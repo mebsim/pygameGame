@@ -1,0 +1,4 @@
+WASD - Move
+C - Change Gun (IF POSSIBLE)
+R - Reload
+Left Click - Shoot
