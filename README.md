@@ -6,4 +6,4 @@ There are two modes, insane (which increases rapidly) and classic (which increas
 
 This was a very quick and simple game.
 
-I made the art using pixelmator.
+I made the art using Pixelmator and piskelapp (http://www.piskelapp.com/).
