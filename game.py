@@ -113,6 +113,11 @@ class Bullets:
             mouse = pygame.mouse.get_pos()
             mx = mouse[0]
             my = mouse[1]
+            xDistance = mx - px
+            yDistance = my - py
+            rad = math.atan2(yDistance, xDistance)
+            mx = px + (100 * math.cos(rad))
+            my = py + (100 * math.sin(rad))
             for i in range(0,5):
                 xDistance = mx + change - px
                 yDistance = my + change - py
