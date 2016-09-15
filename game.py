@@ -3,11 +3,11 @@ import math
 import random
 
 #  Colors #
-white = (255,255,255)
-black = (0,0,0)
-red = (255,0,0)
-green = (0,255,0)
-blue = (0,0,255)
+white = (255, 255, 255)
+black = (0, 0, 0)
+red = (255, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
 
 # Init Pygame #
 pygame.init()
@@ -16,8 +16,9 @@ pygame.init()
 display_width = 500
 display_height = 500
 
+
 # Pygame Variables #
-gameDisplay = pygame.display.set_mode((display_width,display_height))
+gameDisplay = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption('Shooter')
 clock = pygame.time.Clock()
 
@@ -47,6 +48,7 @@ chosingMode = False
 insanityMode = False
 highScore = []
 hscoretoprint = 0
+timesPaused = 0
 
 #  Player Specific Variables #
 px = 250
@@ -63,27 +65,80 @@ dy = 0
 
 # Font/text: I got this from this website -- http://www.nerdparadise.com/tech/python/pygame/basics/part5/ #
 font = pygame.font.SysFont("timesnewroman", 24)
-smallFont = pygame.font.SysFont("timesnewroman", 12)
-Instructions = smallFont.render("'r' - Reload | 'c' - Change Weapons | 'wasd' - Movements | click - Shoot",True,(255,255,255))
+smallFont = pygame.font.SysFont("sansserif", 12)
+Instructions = smallFont.render("'r'-Reload|'c'-Change Weapons|'wasd'-Movements|click-Shoot", True, (255, 255, 255))
 fontLarge = pygame.font.SysFont("timesnewroman", 50)
 fontMedium = pygame.font.SysFont("timesnewroman", 32)
 scoreText = font.render("Score", True, (255, 255, 255))
-highscoreText = font.render("Highscore", True, (255,255,255))
-scoreNumber = font.render(str(score), True, (255,255,255))
-pauseMessage = fontLarge.render("PAUSED", True, (255,255,255))
-gameOverMessage = fontLarge.render("GAME OVER", True, (255,255,255))
-chosingModeMessage = fontLarge.render("CHOOSE", True, (255,255,255))
-backtoTitle = fontMedium.render("Main Menu", True, (255,255,255))
-quitGame = fontMedium.render("Quit", True, (255,255,255))
-startGame = fontMedium.render("Start", True, (255,255,255))
-backtoGame = fontMedium.render("Unpause", True, (255,255,255))
-classic = fontMedium.render("Classic", True, (255,255,255))
-insane = fontMedium.render("Insane", True, (255,255,255))
+highscoreText = font.render("Highscore", True, (255, 255, 255))
+scoreNumber = font.render(str(score), True, (255, 255, 255))
+pauseMessage = fontLarge.render("PAUSED", True, (255, 255, 255))
+gameOverMessage = fontLarge.render("GAME OVER", True, (255, 255, 255))
+chosingModeMessage = fontLarge.render("CHOOSE", True, (255, 255, 255))
+backtoTitle = fontMedium.render("Main Menu", True, (255, 255, 255))
+quitGame = fontMedium.render("Quit", True, (255, 255, 255))
+startGame = fontMedium.render("Start", True, (255, 255, 255))
+backtoGame = fontMedium.render("Unpause", True, (255, 255, 255))
+classic = fontMedium.render("Classic", True, (255, 255, 255))
+insane = fontMedium.render("Insane", True, (255, 255, 255))
+
+
+class Bullets:
+
+    x = [0]
+    y = [0]
+    vx = [0]
+    vy = [0]
+    exist = [False]
+
+    def createNewBullet(self, px, py):
+        self.x += [px]
+        self.y += [py]
+        self.exist += [True]
+        mouse = pygame.mouse.get_pos()
+        mx = mouse[0]
+        my = mouse[1]
+        xDistance = mx - px
+        yDistance = my - py
+        rad = math.atan2(yDistance, xDistance)
+        self.vx += [(10 * math.cos(rad))]
+        self.vy += [(10 * math.sin(rad))]
+
+    def move(self):
+        for i in range(len(self.x)):
+            if self.exist[i] == True:
+                self.x[i] += self.vx[i]
+                self.y[i] += self.vy[i]
+                bix = int(self.x[i])
+                biy = int(self.y[i])
+                pygame.draw.circle(gameDisplay, green, (bix, biy), 5)
+                if (self.x[i] >= 500 or self.x[i] <= 0) or (self.y[i] >= 500 or self.y[i] <= 0):
+                    self.exist[i] = False
+
+    def getPositionX(self):
+        return self.x
+
+    def getPositionY(self):
+        return self.y
+
+    def getExist(self):
+        return self.exist
+
+    def bth(self, bth):
+        btk = 0
+        for i in range(len(bth)):
+            btk = bth[i]
+            self.exist[btk] = False
+
 
 class Enemy:
-    """This is the enemy class, which is used to check for enemy position, draw them, check if they are dead and more."""
+    """This is the enemy class, which is used to check for enemy position, draw them, check if they are dead, etc."""
     x = [10]
     y = [10]
+    bx = []
+    by = []
+    bmx = []
+    bmy = []
     drop = [1]
     health = [10]
     checked = False
@@ -113,13 +168,28 @@ class Enemy:
     def move(self, i):
         global px
         global py
-        if px < self.x[i]:
+        moveU = True
+        moveD = True
+        moveL = True
+        moveR = True
+        for b in range(len(self.x)):
+            b -= 1
+            if self.health[b] > 0:
+                if self.x[b] > self.x[i] + 5 and self.x[b] < self.x[i] + 10:
+                    moveR = False
+                if self.x[b] < self.x[i] - 5 and self.x[b] > self.x[i] - 10:
+                    moveL = False
+                if self.y[b] < self.y[i] - 5 and self.y[b] > self.y[i] - 10:
+                    moveU = False
+                if self.y[b] > self.y[i] + 5 and self.y[b] < self.y[i] + 10:
+                    moveD = False
+        if px < self.x[i] and moveL:
             self.x[i] -= 1
-        if px > self.x[i]:
+        if px > self.x[i] and moveR:
             self.x[i] += 1
-        if py > self.y[i]:
+        if py > self.y[i] and moveD:
             self.y[i] += 1
-        if py < self.y[i]:
+        if py < self.y[i] and moveU:
             self.y[i] -= 1
 
     def main(self):
@@ -138,8 +208,8 @@ class Enemy:
                 pygame.draw.circle(gameDisplay,red, ((int)(self.x[i]),(int)(self.y[i])), 10)
                 self.move(i)
                 self.giveHit(i)
-                if clickr and alive and ammoL > 0:
-                    self.checkhit(i)
+                '''if clickr and alive and ammoL > 0:
+                    self.checkhit(i)'''
             else:
                 if self.drop[i] == 1:
                     gameDisplay.blit(ammoPack,(self.x[i],self.y[i]))
@@ -164,9 +234,8 @@ class Enemy:
             if roundOver == False:
                 numofE += 1
 
-
-    def checkhit(self, i):
-        global px
+    def checkhit(self, x, y, exist):
+        '''global px
         global py
         global score
         mouse = pygame.mouse.get_pos()
@@ -200,7 +269,17 @@ class Enemy:
                     self.health[i] -= 10
                     score += 5
                     break
-                sob = 5 + a
+                sob = 5 + a'''
+        global score
+        bth = [0]
+        for i in range(len(self.x)):
+            for b in range(len(x)):
+                if self.x[i] > x[b] - 10 and self.x[i] < x[b] + 10 and exist[b] == True:
+                    if self.y[i] > y[b] - 10 and self.y[i] < y[b] + 10 and self.health[i] > 0:
+                        self.health[i] = 0
+                        score += 5
+                        bth += [b]
+        return bth
 
     def giveHit(self, i):
         global alive
@@ -209,11 +288,14 @@ class Enemy:
         if self.x[i] < px + 40 and self.x[i] > px - 40 and self.y[i] < py + 40 and self.y[i] > py - 40:
             alive = False
 
+# Init classes #
 e = Enemy()
+b = Bullets()
 
 # Thanks to http://www.python-course.eu/python3_file_management.php for telling me how to read and write files
 
-def writeFile():
+
+def writefile():
     hsfile = open("Highscore.txt", "w")
     if score > highScore[0]:
         scoretoPrint = str(score) + "\n"
@@ -222,7 +304,8 @@ def writeFile():
     hsfile.write(scoretoPrint)
     hsfile.close()
 
-def readFile():
+
+def readfile():
     global hscoretoprint
     global highScore
     hsfile = open("Highscore.txt")
@@ -233,13 +316,14 @@ def readFile():
     print("HIGHSCORE:",hscoretoprint)
     hsfile.close()
 
-def titleScreen():
+
+def titlescreen():
     global ammo
     global ammoL
     global chosingMode
     global Failed
     global titlescreen
-    readFile()
+    readfile()
     gameDisplay.fill(white)
     while titlescreen == True:
         gameDisplay.blit(bg,(0,0))
@@ -275,7 +359,6 @@ def titleScreen():
         clock.tick(10)
         pygame.display.update()
 
-timesPaused = 0
 
 def pausemenu():
     global ammo
@@ -326,7 +409,8 @@ def pausemenu():
         pygame.display.update()
         timesPaused += 1
 
-def GameOver():
+
+def gameover():
     global ammo
     global ammoL
     global pistolEquiped
@@ -342,7 +426,7 @@ def GameOver():
     global dx
     global dy
     global numofE
-    writeFile()
+    writefile()
     while gameOver == True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -390,7 +474,8 @@ def GameOver():
         clock.tick(10)
         pygame.display.update()
 
-def choseGameMode():
+
+def chosegamemode():
     global ammo
     global ammoL
     global insanityMode
@@ -416,38 +501,41 @@ def choseGameMode():
                 ammo = 10
                 ammoL = 6
         if mouse[0] > 300 and mouse[0] < 500 and mouse[1] > 270 and mouse[1] < 500:
-            if click[0] == True:
+            if click[0]:
                 chosingMode = False
                 e.revertToOrginal()
                 insanityMode = False
                 ammo = 10
                 ammoL = 6
-        gameDisplay.blit(startButton, (300,450))
-        gameDisplay.blit(startButton, (300,430))
-        gameDisplay.blit(startButton, (300,410))
-        gameDisplay.blit(startButton, (300,390))
-        gameDisplay.blit(startButton, (300,370))
-        gameDisplay.blit(startButton, (0,450))
-        gameDisplay.blit(startButton, (0,430))
-        gameDisplay.blit(startButton, (0,410))
-        gameDisplay.blit(startButton, (0,390))
-        gameDisplay.blit(startButton, (0,370))
-        gameDisplay.blit(insane, (50,410))
-        gameDisplay.blit(classic, (350,410))
+        gameDisplay.blit(startButton, (300, 450))
+        gameDisplay.blit(startButton, (300, 430))
+        gameDisplay.blit(startButton, (300, 410))
+        gameDisplay.blit(startButton, (300, 390))
+        gameDisplay.blit(startButton, (300, 370))
+        gameDisplay.blit(startButton, (0, 450))
+        gameDisplay.blit(startButton, (0, 430))
+        gameDisplay.blit(startButton, (0, 410))
+        gameDisplay.blit(startButton, (0, 390))
+        gameDisplay.blit(startButton, (0, 370))
+        gameDisplay.blit(insane, (50, 410))
+        gameDisplay.blit(classic, (350, 410))
         clock.tick(10)
         pygame.display.update()
+
 
 def player():
     global px
     global py
     pygame.draw.circle(gameDisplay,black, (px,py), 50)
 
-def displayAmmo():
-    for a in range(ammoL):
+
+def displayammo():
+    for f in range(ammoL):
         if pistolEquiped:
-            gameDisplay.blit(bImg,(400,500 - (a * 35)))
+            gameDisplay.blit(bImg, (400, 500 - (f * 35)))
         else:
-            gameDisplay.blit(sbImg, (400,500 - (a * 35)))
+            gameDisplay.blit(sbImg, (400, 500 - (f * 35)))
+
 
 def reload():
     global ammoL
@@ -457,28 +545,30 @@ def reload():
         ammo -= 1
         ammoL += 1
 
+# Game loop #
 while not Failed:
-    if titlescreen == True:
-        titleScreen()
-    if chosingMode == True:
-        choseGameMode()
+    if titlescreen:
+        print("Hi there!")
+        titlescreen()
+    if chosingMode:
+        chosegamemode()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            writeFile()
+            writefile()
             Failed = True
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a:
+            if event.key == pygame.K_a and px >= 0:
                 dx = -5
-            elif event.key == pygame.K_d:
+            elif event.key == pygame.K_d and px <= 500:
                 dx = 5
-            if event.key == pygame.K_w:
+            if event.key == pygame.K_w and py >= 0:
                 dy = - 5
-            elif event.key == pygame.K_s:
+            elif event.key == pygame.K_s and py <= 500:
                 dy = 5
             if event.key == pygame.K_r:
                 reload()
             if event.key == pygame.K_c:
-                if shotgunAvailable == True:
+                if shotgunAvailable:
                     if pistolEquiped:
                         pistolEquiped = False
                     else:
@@ -498,52 +588,61 @@ while not Failed:
                 pausemenu()
     px += dx
     py += dy
-    highscoreNumber = font.render(str(hscoretoprint), True, (255,255,255))
+    highscoreNumber = font.render(str(hscoretoprint), True, (255, 255, 255))
     gameDisplay.fill(white)
     gameDisplay.blit(bg, (0, 0))
     if alive:
         player()
-    if alive != True:
+    if not alive:
         gameOver = True
-        GameOver()
+        gameover()
     if clickr and alive and ammoL > 0:
+        b.createNewBullet(px, py)
         ammoL -= 1
-    if roundOver == False:
-        print("ROUND OVER, NEXT ROUND: ", numofE, "------------------------------------------------------------------------------------------------------------------------------------------")
+        ammo -= 1
+    if not roundOver:
+        print("ROUND OVER, NEXT ROUND: ", numofE, "-------------------------------------------------------------------")
         for a in range(numofE):
-            side = random.randint(1,4)
-            #print(side)
+            side = random.randint(1, 4)
             ex = 0
             ey = 0
             if side == 1:
                 ex = random.randint(0, 500)
-                ey = random.randint(-200,-10)
+                ey = random.randint(-200, -10)
             elif side == 2:
                 ex = random.randint(0, 500)
-                ey = random.randint(510,700)
+                ey = random.randint(510, 700)
             elif side == 3:
                 ex = random.randint(-200, -10)
-                ey = random.randint(0,500)
+                ey = random.randint(0, 500)
             else:
                 ex = random.randint(510, 700)
                 ey = random.randint(0, 500)
             e.addEnemy(ex, ey)
         roundOver = True
-    gameDisplay.blit(scoreText,(400, 10))
-    gameDisplay.blit(scoreNumber,(460,10))
-    gameDisplay.blit(highscoreText,(10, 10))
-    gameDisplay.blit(highscoreNumber,(110,10))
+    b.move()
+    gameDisplay.blit(scoreText, (400, 10))
+    gameDisplay.blit(scoreNumber, (460, 10))
+    gameDisplay.blit(highscoreText, (10, 10))
+    gameDisplay.blit(highscoreNumber, (110, 10))
+    bx = b.getPositionX()
+    by = b.getPositionY()
+    bexist = b.getExist()
     e.main()
-    displayAmmo()
+    bth = e.checkhit(bx, by, bexist)
+    b.bth(bth)
+    displayammo()
     clickr = False
     if highScore[0] <= score:
-        writeFile()
+        writefile()
         highScore[0] = score
         hscoretoprint = score
     clock.tick(30)
-    gameDisplay.blit(Instructions, (10,480))
+    gameDisplay.blit(Instructions, (10, 480))
     pygame.display.update()
-    scoreNumber = font.render(str(score), True, (255,255,255))
-    # Thanks to this website (https://pythonprogramming.net/pygame-python-3-part-1-intro/) for giving the basic tutorials for making this game
+    scoreNumber = font.render(str(score), True, (255, 255, 255))
+    # Thanks to this website (https://pythonprogramming.net/pygame-python-3-part-1-intro/) for having tutorials
+
+# Quit game #
 pygame.quit()
 quit()
