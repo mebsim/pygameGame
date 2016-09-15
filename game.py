@@ -92,17 +92,34 @@ class Bullets:
     exist = [False]
 
     def createNewBullet(self, px, py):
-        self.x += [px]
-        self.y += [py]
-        self.exist += [True]
-        mouse = pygame.mouse.get_pos()
-        mx = mouse[0]
-        my = mouse[1]
-        xDistance = mx - px
-        yDistance = my - py
-        rad = math.atan2(yDistance, xDistance)
-        self.vx += [(10 * math.cos(rad))]
-        self.vy += [(10 * math.sin(rad))]
+        global pistolEquiped
+        if pistolEquiped:
+            self.x += [px]
+            self.y += [py]
+            self.exist += [True]
+            mouse = pygame.mouse.get_pos()
+            mx = mouse[0]
+            my = mouse[1]
+            xDistance = mx - px
+            yDistance = my - py
+            rad = math.atan2(yDistance, xDistance)
+            self.vx += [(10 * math.cos(rad))]
+            self.vy += [(10 * math.sin(rad))]
+        else:
+            change = -20
+            self.x += [px, px, px, px, px]
+            self.y += [py, py, py, py, py]
+            self.exist += [True, True, True, True, True]
+            mouse = pygame.mouse.get_pos()
+            mx = mouse[0]
+            my = mouse[1]
+            for i in range(0,5):
+                xDistance = mx + change - px
+                yDistance = my + change - py
+                rad = math.atan2(yDistance, xDistance)
+                self.vx += [(15 * math.cos(rad))]
+                self.vy += [(15 * math.sin(rad))]
+                change += 10
 
     def move(self):
         for i in range(len(self.x)):
@@ -158,11 +175,11 @@ class Enemy:
         self.health += [10]
         drop = random.randint(0,100)
         if drop >= 1 and drop <= 10:
-            drop = 1
+            drop = 10
         elif drop == 13 or drop == 42:
             drop = 10
         else:
-            drop = 0
+            drop = 10
         self.drop += [drop]
 
     def move(self, i):
@@ -235,41 +252,6 @@ class Enemy:
                 numofE += 1
 
     def checkhit(self, x, y, exist):
-        '''global px
-        global py
-        global score
-        mouse = pygame.mouse.get_pos()
-        mx = mouse[0]
-        my = mouse[1]
-        xDistance = mx - px
-        yDistance = my - py
-        rad = math.atan2(yDistance, xDistance)
-        bx = px
-        by = py
-        sob = 5
-        if pistolEquiped:
-            for a in range(100):
-                bx += 5 * math.cos(rad)
-                by += 5 * math.sin(rad)
-                bix = int(bx)
-                biy = int(by)
-                pygame.draw.circle(gameDisplay, green, (bix, biy), 5)
-                if bx <= self.x[i] + 10 and bx >= self.x[i] - 10 and by <= self.y[i] + 10 and by >= self.y[i] - 10 and self.health[i] > 0:
-                    self.health[i] -= 10
-                    score += 5
-                    break
-        else:
-            for a in range(50):
-                bx += 5 * math.cos(rad)
-                by += 5 * math.sin(rad)
-                bix = int(bx)
-                biy = int(by)
-                pygame.draw.circle(gameDisplay, green, (bix, biy), sob)
-                if bx <= self.x[i] + sob and bx >= self.x[i] - sob and by <= self.y[i] + sob and by >= self.y[i] - sob and self.health[i] > 0:
-                    self.health[i] -= 10
-                    score += 5
-                    break
-                sob = 5 + a'''
         global score
         bth = [0]
         for i in range(len(self.x)):
@@ -317,7 +299,7 @@ def readfile():
     hsfile.close()
 
 
-def titlescreen():
+def ts():
     global ammo
     global ammoL
     global chosingMode
@@ -548,8 +530,7 @@ def reload():
 # Game loop #
 while not Failed:
     if titlescreen:
-        print("Hi there!")
-        titlescreen()
+        ts()
     if chosingMode:
         chosegamemode()
     for event in pygame.event.get():
