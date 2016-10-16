@@ -28,7 +28,6 @@ sbImg = pygame.image.load('Bullet4.png')
 icon = pygame.image.load('Logo3.png')
 bg = pygame.image.load('Background2.png')
 ammoPack = pygame.image.load('AmmoPack.png')
-logo = pygame.image.load('SHOOTER.png')
 startButton = pygame.image.load('StartButton.png')
 shotgun = pygame.image.load('shotgun.png')
 pause = pygame.image.load('pause.png')
@@ -318,7 +317,6 @@ def ts():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        gameDisplay.blit(logo, (0,10))
         mouse = pygame.mouse.get_pos()
         click = pygame.mouse.get_pressed()
         if mouse[0] > 0 and mouse[0] < 200 and mouse[1] > 370 and mouse[1] < 500:
